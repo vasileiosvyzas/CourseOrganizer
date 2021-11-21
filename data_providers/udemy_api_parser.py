@@ -5,6 +5,10 @@ import json
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 
+client_id = os.environ.get('UDEMY_CLIENT_ID')
+client_secret = os.environ.get('UDEMY_SECRET')
+
+
 def request_courses_list(url):
     courses_list = requests.get(url, auth=HTTPBasicAuth(client_id, client_secret))
     return courses_list.json()
@@ -57,7 +61,6 @@ def main():
         json.dump(courses_list, output_file)
 
     page = get_next_page(courses_list)
-    print(page)
     get_data_from_new_page_and_write_to_file(page, file_location)
 
 
