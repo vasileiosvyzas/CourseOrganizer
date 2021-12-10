@@ -6,25 +6,8 @@ from bs4 import BeautifulSoup
 from lxml import etree
 
 
-
-def write_json(new_data, filename):
-    with open(filename, 'r+') as file:
-        # First we load existing data into a dict.
-        file_data = json.load(file)
-
-        # Join new_data with file_data inside emp_details
-        file_data.extend(new_data)
-
-        # Sets file's current position at offset.
-        file.seek(0)
-
-        # convert back to json.
-        json.dump(file_data, file, indent=4)
-
-
 def get_course_level(course_page):
     """
-
     :param course_page:
     :return: course level as string
     """
@@ -47,7 +30,6 @@ def main():
     soup1 = BeautifulSoup(new_courses, 'lxml')
     new_courses = soup1.find_all("item")
 
-    print(new_courses)
     course_list = []
     for course in new_courses:
         course_info['title'] = course.title.text
@@ -59,7 +41,10 @@ def main():
 
         course_list.append(course_info)
 
-    print(course_list)
+    file_name = str(datetime.now().date()) + '_mit_new_courses.json'
+    file_location = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data', file_name)
+    with open(file_location, 'w') as output_file:
+        json.dump([], output_file)
 
 
 if __name__ == '__main__':
