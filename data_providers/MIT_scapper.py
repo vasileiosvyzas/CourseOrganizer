@@ -54,7 +54,7 @@ def main():
     topics_url = 'https://ocw.mit.edu/courses/find-by-topic/topics.json'
     topics = requests.get(topics_url).json()
 
-    file_name = str(datetime.now().date()) + '.json'
+    file_name = str(datetime.now().date()) + '_mit_ocw_scrapper.json'
     file_location = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data', file_name)
 
     with open(file_location, 'w') as output_file:
