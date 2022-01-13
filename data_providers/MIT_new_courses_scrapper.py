@@ -44,7 +44,7 @@ def main():
     file_name = str(datetime.now().date()) + '_mit_new_courses.json'
     file_location = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data', file_name)
     with open(file_location, 'w') as output_file:
-        json.dump([], output_file)
+        json.dump(course_list, output_file)
 
 
 if __name__ == '__main__':
