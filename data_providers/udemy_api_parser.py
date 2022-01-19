@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+import boto3
 
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
@@ -23,7 +24,6 @@ def get_next_page(courses_list):
 
 def write_json(new_data, filename):
     with open(filename, 'r+') as file:
-
         # First we load existing data into a dict.
         file_data = json.load(file)
 
@@ -35,6 +35,18 @@ def write_json(new_data, filename):
 
         # convert back to json.
         json.dump(file_data, file, indent=4)
+
+    s3 = boto3.resource(
+        service_name='s3',
+        region_name='us-east-1',
+        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
+    )
+    name_of_file = os.path.basename(filename)
+    s3.create_bucket(Bucket='portfolio-udemy-data')
+
+    s3.Bucket('portfolio-udemy-data').upload_file(Filename=filename, Key='udemy/' + name_of_file)
+    print('bucket has been created')
 
 
 def get_data_from_new_page_and_write_to_file(page, filename):
