@@ -6,12 +6,11 @@ import boto3
 from requests.auth import HTTPBasicAuth
 from datetime import datetime
 
-client_id = os.environ.get('UDEMY_CLIENT_ID')
-client_secret = os.environ.get('UDEMY_SECRET')
-
 
 def request_courses_list(url):
-    courses_list = requests.get(url, auth=HTTPBasicAuth(client_id, client_secret))
+    courses_list = requests.get(url,
+                                auth=HTTPBasicAuth(os.environ.get('UDEMY_CLIENT_ID'),
+                                                   os.environ.get('UDEMY_SECRET')))
     return courses_list.json()
 
 
@@ -36,26 +35,16 @@ def write_json(new_data, filename):
         # convert back to json.
         json.dump(file_data, file, indent=4)
 
-    s3 = boto3.resource(
-        service_name='s3',
-        region_name='us-east-1',
-        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
-        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
-    )
-    name_of_file = os.path.basename(filename)
-    s3.create_bucket(Bucket='portfolio-udemy-data')
-
-    s3.Bucket('portfolio-udemy-data').upload_file(Filename=filename, Key='udemy/' + name_of_file)
-    print('bucket has been created')
-
 
 def get_data_from_new_page_and_write_to_file(page, filename):
     if page is not None:
         courses_list = request_courses_list(page)
         courses = courses_list['results']
 
+        print('Updating the json')
         write_json(courses, filename)
 
+        print('Getting the new page and start all over again')
         page = get_next_page(courses_list)
         get_data_from_new_page_and_write_to_file(page, filename)
     else:
@@ -74,6 +63,18 @@ def main():
 
     page = get_next_page(courses_list)
     get_data_from_new_page_and_write_to_file(page, file_location)
+
+    s3 = boto3.resource(
+        service_name='s3',
+        region_name='us-east-1',
+        aws_access_key_id=os.environ.get('AWS_ACCESS_KEY_ID'),
+        aws_secret_access_key=os.environ.get('AWS_SECRET_ACCESS_KEY')
+    )
+    name_of_file = os.path.basename(file_name)
+    s3.create_bucket(Bucket='portfolio-udemy-data')
+
+    s3.Bucket('portfolio-udemy-data').upload_file(Filename=file_location, Key='udemy/' + name_of_file)
+    print('bucket has been created and data were added')
 
 
 if __name__ == "__main__":
