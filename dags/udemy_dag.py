@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from requests.auth import HTTPBasicAuth
 from airflow.utils.dates import days_ago
-from airflow.operators.bash import BashOperator
 from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from typing import Dict, List
 
 
@@ -46,9 +46,23 @@ def get_courses_from_all_pages():
         all_courses.extend(courses_list['results'])
 
     file_name = str(datetime.now().date()) + '.json'
-    file_location = os.path.join(os.path.abspath(os.path.join(os.getcwd(), os.pardir)), 'data', file_name)
+    file_location = os.path.join('/tmp', file_name)
 
     write_data_to_json_on_disk(courses=all_courses, file_location=file_location)
+
+
+AWS_S3_CONN_ID = "S3_default"
+
+
+def upload_files_to_S3():
+    file_name = str(datetime.now().date()) + '.json'
+    file_location = os.path.join('/tmp', file_name)
+
+    source_s3_bucket = "udemy-courses-store"
+    source_s3 = S3Hook(AWS_S3_CONN_ID)
+    source_s3.load_file(filename=file_location,
+                        key=file_name,
+                        bucket_name=source_s3_bucket)
 
 
 with DAG(
@@ -66,4 +80,14 @@ with DAG(
         start_date=days_ago(1),
         catchup=False,
 ) as dag:
-    python_task = PythonOperator(task_id='get_courses_list', python_callable=get_courses_from_all_pages)
+    get_courses_and_write_to_file = PythonOperator(
+        task_id='get_courses_list',
+        python_callable=get_courses_from_all_pages
+    )
+
+    upload_courses_file_to_S3 = PythonOperator(
+        task_id='upload_files_to_S3',
+        python_callable=upload_files_to_S3
+    )
+
+    get_courses_and_write_to_file >> upload_courses_file_to_S3
